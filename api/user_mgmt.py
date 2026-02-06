@@ -6,13 +6,6 @@ import bcrypt
 
 user_mgmt = Blueprint('user_mgmt', __name__)
 
-@user_mgmt.before_request
-def user_mgmt_before_request():
-	data = request.get_json()
-	
-	if not data:
-		return jsonify({"error" : ["JSON body is empty"]}), 400		
-
 
 @user_mgmt.route('/create_user', methods=["POST"])
 def create_user():
@@ -40,7 +33,11 @@ def create_user():
 	
 	
 	query = sql(user_commands["GET_USER_DATA_BY_USERNAME"], args={"username" : data["username"]})
-	session["id"] = query[0]["id"]	
+	
+	if isinstance(query, list):
+		return jsonify({"error" : ["Someone by that username already exists (BACKEND DB ERRROR) "]})
+
+	session["id"] = query["id"]	
 	
 	
 	return jsonify({"message" : ["User created", "Logged in"], "redirect" : "REDIRECT_HERE"}), 200
@@ -70,6 +67,12 @@ def log_in():
 	if not password_check:
 		return jsonify({"error" : ["Username or password is incorrect"]}), 400
 	
-	return jsonify({"message" : ["Logged in"], "redirect" : "REDIRECT_HERE"})
-
+	query = sql(user_commands["GET_USER_DATA_BY_USERNAME"], args={"username" : data["username"]})
+	
+	if query:
+		print(session)
+		session["id"] = query["id"] 
+		return jsonify({"message" : ["Logged in"], "redirect" : "REDIRECT_HERE"})
+	
+	return jsonify({"error" : ["sql error"]})
 

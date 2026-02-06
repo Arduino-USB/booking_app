@@ -63,6 +63,9 @@ def sql(cmd, fetch=None, enable_columns=True, args=None, page=None, page_size=No
 
 	if check_next_page:
 		return out_list, has_next_page
+	
+	if isinstance(out_list, list) and len(out_list) == 1: 
+		return out_list[0]
 
 	return out_list
 
