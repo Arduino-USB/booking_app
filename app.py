@@ -23,12 +23,12 @@ app.register_blueprint(booking_mgmt, url_prefix="/api/booking/mgmt")
 app.config['SECRET_KEY'] = 'JHIKBFjhGFHjgFhkJHfVJJUfgJKkHhKkjhjKler578hy7t78ii0ui'
 
 
-@app.before_request
-def check_json_body():
-    if request.method in ['POST']:  # optional: only check methods with bodies
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": ["JSON body is empty"]}), 400
+#@app.before_request
+#def check_json_body():
+#    if request.method in ['POST']:  # optional: only check methods with bodies
+#        data = request.get_json()
+#        if not data:
+#            return jsonify({"error": ["JSON body is empty"]}), 400
 
 
 if __name__ == "__main__":

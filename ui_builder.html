@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple UI Builder</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #2b2b2b;
+    color: #eee;
+}
+
+#toolbar {
+    background: #1f1f1f;
+    padding: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+#canvas {
+    position: relative;
+    height: calc(100vh - 50px);
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.tool-btn {
+    padding: 6px 10px;
+    cursor: pointer;
+    background: #3a3a3a;
+    border: none;
+    color: white;
+}
+
+.ui-element {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+}
+
+#contextMenu {
+    position: fixed;
+    background: #1e1e1e;
+    border: 1px solid #444;
+    padding: 10px;
+    width: 300px;
+    display: none;
+    z-index: 9999;
+}
+
+#contextMenu label {
+    font-size: 12px;
+    display: block;
+    margin-top: 6px;
+}
+
+#contextMenu input,
+#contextMenu textarea,
+#contextMenu select {
+    width: 100%;
+    background: #2b2b2b;
+    color: #eee;
+    border: 1px solid #444;
+    font-size: 12px;
+}
+
+textarea {
+    resize: vertical;
+}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+    <button class="tool-btn" onclick="addElement('button')">Add Button</button>
+    <button class="tool-btn" onclick="addElement('label')">Add Label</button>
+    <button class="tool-btn" onclick="addElement('image')">Add Image</button>
+    <button class="tool-btn" onclick="addElement('data')">Add Data Display</button>
+    <button class="tool-btn" onclick="setBackground()">Set Background Image</button>
+	<button class="tool-btn" onclick="exportProject()">Export</button>
+	<button class="tool-btn" onclick="openImport()">Import</button>
+
+
+</div>
+
+<div id="canvas"></div>
+
+<div id="contextMenu"></div>
+<div id="exportModal" style="
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:none;
+    z-index:10000;
+    padding:20px;
+">
+<div id="importModal" style="
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:none;
+    z-index:10000;
+    padding:20px;
+">
+    <button onclick="closeImport()" style="margin-bottom:10px;">Close</button>
+
+    <h3>Paste JSON to Import</h3>
+    <textarea id="importJSON" style="width:100%; height:90%;"></textarea>
+    <button onclick="importProject()" style="margin-top:10px;">Import</button>
+</div>
+
+    <button onclick="closeExport()" style="margin-bottom:10px;">Close</button>
+
+    <h3>Export JSON</h3>
+    <textarea id="exportHTML" style="width:100%; height:90%;"></textarea>
+</div>
+
+
+<script>
+/* ---------------------------
+   Element Registry (MODULAR)
+----------------------------*/
+
+function deleteSelectedElement() {
+    if (!selectedElement) return;
+    selectedElement.remove();
+    selectedElement = null;
+    document.getElementById("contextMenu").style.display = "none";
+}
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Delete" && selectedElement) {
+        deleteSelectedElement();
+    }
+});
+
+const elementTypes = {
+    button(el) {
+        el.textContent = "Button";
+        el.onclick = () => {};
+    },
+
+    label(el) {
+        el.textContent = "Label";
+    },
+
+    image(el) {
+        el.style.width = "150px";
+        el.style.height = "100px";
+        el.style.background = "#555";
+        el.dataset.src = "";
+        el.style.backgroundSize = "cover";
+    },
+
+    data(el) {
+        el.style.width = "300px";
+        el.style.height = "200px";
+        el.style.overflow = "auto";
+        el.style.background = "#111";
+        el.dataset.js = "";
+        el.dataset.map = "";
+    }
+};
+
+/* ---------------------------
+   Core State
+----------------------------*/
+let selectedElement = null;
+
+/* ---------------------------
+   Element Creation
+----------------------------*/
+
+function openImport() {
+    document.getElementById("importModal").style.display = "block";
+}
+
+function closeImport() {
+    document.getElementById("importModal").style.display = "none";
+}
+function importProject() {
+    const input = document.getElementById("importJSON").value;
+    if (!input) return alert("Paste JSON first!");
+
+    let json;
+    try {
+        json = JSON.parse(input);
+    } catch (e) {
+        return alert("Invalid JSON: " + e.message);
+    }
+
+    const canvas = document.getElementById("canvas");
+    canvas.innerHTML = ""; // clear existing elements
+
+    // Restore canvas properties
+    if (json.html.canvas && json.html.canvas.backgroundImage) {
+        canvas.style.backgroundImage = json.html.canvas.backgroundImage;
+    }
+
+    const body = json.html.body;
+
+    for (const key in body) {
+        const item = body[key];
+
+        // Check if it's a module object
+        if (key.startsWith("module:")) {
+            const moduleName = key.split(":")[1];
+            for (const subKey in item) {
+                createElementFromProps(item[subKey], subKey, moduleName);
+            }
+        } else {
+            createElementFromProps(item, key);
+        }
+    }
+
+    closeImport();
+}
+function createElementFromProps(props, key, moduleName = "") {
+    const canvas = document.getElementById("canvas");
+
+    const el = document.createElement("div");
+    el.className = props.class || "ui-element";
+    el.dataset.type = key.split("_")[0];   // infer type from key
+    el.dataset.module = moduleName;
+    el.dataset.scale = props.scale || 1;
+    el.dataset.onclick = props.onclick || "";
+    el.dataset.src = props.image || "";
+    el.dataset.js = props.dataJSON || "";
+    el.dataset.map = props.dataMap || {};
+
+    el.style.cssText = props.style || "";
+    el.style.transform = `scale(${el.dataset.scale})`;
+
+    // Set inner text
+    if (props.text) el.textContent = props.text;
+
+    // If image, create img inside or set background
+    if (el.dataset.type === "image" && props.image) {
+        el.style.backgroundImage = `url(${props.image})`;
+        el.style.backgroundSize = "contain";
+        el.style.backgroundRepeat = "no-repeat";
+        el.style.backgroundPosition = "center";
+    }
+
+    // Add event listener if onclick exists
+    if (props.onclick) {
+        el.onclick = function () {
+            try { new Function(props.onclick).call(el); } catch (e) { console.error(e); }
+        };
+    }
+
+    // Make draggable (reuse your existing logic)
+    makeDraggable(el);
+
+    canvas.appendChild(el);
+}
+
+
+function addElement(type) {
+    const el = document.createElement("div");
+    el.className = "ui-element";
+    el.dataset.type = type;
+    el.style.left = "50px";
+    el.style.top = "50px";
+    el.style.zIndex = 1;
+
+    elementTypes[type](el);
+
+    makeDraggable(el);
+    el.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        openContextMenu(el, e.clientX, e.clientY);
+    });
+
+    document.getElementById("canvas").appendChild(el);
+}
+
+/* ---------------------------
+   Dragging
+----------------------------*/
+function makeDraggable(el) {
+    let offsetX, offsetY;
+
+    el.addEventListener("mousedown", e => {
+        if (e.button !== 0) return;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+
+        function move(ev) {
+            el.style.left = ev.clientX - offsetX + "px";
+            el.style.top = ev.clientY - offsetY + "px";
+        }
+
+        function up() {
+            document.removeEventListener("mousemove", move);
+            document.removeEventListener("mouseup", up);
+        }
+
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+    });
+}
+
+/* ---------------------------
+   Context Menu
+----------------------------*/
+function openContextMenu(el, x, y) {
+    selectedElement = el;
+    const menu = document.getElementById("contextMenu");
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+    menu.style.display = "block";
+
+   menu.innerHTML = `
+    <label>Position Type</label>
+    <select onchange="elStyle('position', this.value)">
+        <option value="absolute" ${el.style.position !== 'relative' && el.style.position !== 'fixed' ? 'selected' : ''}>absolute</option>
+        <option value="relative" ${el.style.position === 'relative' ? 'selected' : ''}>relative</option>
+        <option value="fixed" ${el.style.position === 'fixed' ? 'selected' : ''}>fixed</option>
+    </select>
+
+    <label>X (left)</label>
+    <input value="${parseInt(el.style.left) || 0}" oninput="elStyle('left', this.value + 'px')">
+
+    <label>Y (top)</label>
+    <input value="${parseInt(el.style.top) || 0}" oninput="elStyle('top', this.value + 'px')">
+
+    <label>Z-Index</label>
+    <input value="${el.style.zIndex || 1}" oninput="elStyle('zIndex', this.value)">
+
+    <label>Width</label>
+    <input value="${el.style.width || ''}" oninput="elStyle('width', this.value)">
+
+    <label>Height</label>
+    <input value="${el.style.height || ''}" oninput="elStyle('height', this.value)">
+
+    <label>Font Family</label>
+    <input value="${el.style.fontFamily || ''}" oninput="elStyle('fontFamily', this.value)">
+
+    <label>Font Size</label>
+    <input value="${el.style.fontSize || ''}" oninput="elStyle('fontSize', this.value)">
+
+    <label>Text Color</label>
+    <input value="${el.style.color || ''}" oninput="elStyle('color', this.value)">
+
+    <label>Custom CSS</label>
+    <textarea onblur="applyCustomCSS(this.value)"></textarea>
+
+    <label>OnClick JS</label>
+    <textarea onblur="applyOnClick(this.value)"></textarea>
+	
+	<label>Scale</label>
+	<input type="number" min="0.1" step="0.1" value="${el.dataset.scale || 1}" oninput="setScale(this.value)">
+
+	<label>Module</label>
+	<input type="text" value="${el.dataset.module || ''}" oninput="setModule(this.value)">
+
+
+    ${
+        el.dataset.type === 'image'
+        ? `<label>Image Path</label>
+           <input onblur="setImageSrc(this.value)">`
+        : ''
+    }
+
+    ${
+        el.dataset.type === 'data'
+        ? `
+        <label>JS (return JSON)</label>
+        <textarea onblur="setDataJS(this.value)"></textarea>
+
+        <label>Key Mapping (JSON)</label>
+        <textarea onblur="setDataMap(this.value)"></textarea>
+        `
+        : ''
+    }
+
+    <hr>
+    <button style="width:100%; background:#8b1e1e; color:white; border:none; padding:6px; cursor:pointer"
+        onclick="deleteSelectedElement()">
+        Delete Element
+    </button>
+`;
+
+}
+function exportProjectJSON() {
+    const canvas = document.getElementById("canvas");
+    const elements = canvas.querySelectorAll(".ui-element");
+
+    const body = {};
+
+    elements.forEach((el, i) => {
+        const type = el.dataset.type;
+        const moduleName = el.dataset.module;
+
+        // Build full element properties
+        const props = {
+            class: el.className,
+            style: el.style.cssText,
+            text: el.textContent || "",
+            scale: el.dataset.scale || 1,
+            onclick: el.dataset.onclick || "",        // store onclick JS if exists
+            image: el.dataset.src || "",             // store image path if image
+            dataJSON: el.dataset.js || "",           // for data display
+            dataMap: el.dataset.map || {}            // data display key mapping
+        };
+
+        // Include module if exists
+        if (moduleName && moduleName.trim() !== "") {
+            if (!body[`module:${moduleName}`]) body[`module:${moduleName}`] = {};
+            body[`module:${moduleName}`][type + "_" + i] = props;
+        } else {
+            body[type + "_" + i] = props;
+        }
+    });
+
+    // Include canvas-level properties (background etc.)
+    const canvasProps = {};
+    if (canvas.style.backgroundImage) canvasProps.backgroundImage = canvas.style.backgroundImage;
+
+    return {
+        html: {
+            body: body,
+            canvas: canvasProps
+        }
+    };
+}
+
+
+function exportProject() {
+    // Generate the full JSON export
+    const exportJSON = exportProjectJSON();
+
+    // Show it in the modal
+    const modal = document.getElementById("exportModal");
+    const htmlArea = document.getElementById("exportHTML");
+
+    // Single textbox contains the entire JSON (all element data, style, JS, modules)
+    htmlArea.value = JSON.stringify(exportJSON, null, 2);
+
+    // Hide old JS/CSS areas if they exist
+    const cssArea = document.getElementById("exportCSS");
+    const jsArea = document.getElementById("exportJS");
+    if (cssArea) cssArea.style.display = "none";
+    if (jsArea) jsArea.style.display = "none";
+
+    modal.style.display = "block";
+}
+
+
+
+function closeExport() {
+    document.getElementById("exportModal").style.display = "none";
+}
+
+
+function elStyle(prop, value) {
+    if (selectedElement) selectedElement.style[prop] = value;
+}
+
+function applyCustomCSS(css) {
+    if (!selectedElement) return;
+    selectedElement.style.cssText += css;
+}
+
+function applyOnClick(code) {
+    if (!selectedElement) return;
+    selectedElement.onclick = () => {
+        try { eval(code); } catch (e) { alert(e); }
+    };
+}
+
+function setImageSrc(src) {
+    if (!selectedElement) return;
+    selectedElement.style.backgroundImage = `url('${src}')`;
+}
+
+function setDataJS(code) {
+    if (!selectedElement) return;
+    selectedElement.dataset.js = code;
+    renderData(selectedElement);
+}
+
+
+function setModule(value) {
+    if (!selectedElement) return;
+    selectedElement.dataset.module = value;
+}
+
+
+function setDataMap(map) {
+    if (!selectedElement) return;
+    selectedElement.dataset.map = map;
+    renderData(selectedElement);
+}
+
+function renderData(el) {
+    try {
+        const data = eval(el.dataset.js || "[]");
+        const map = el.dataset.map ? JSON.parse(el.dataset.map) : {};
+        el.innerHTML = "";
+
+        data.forEach(row => {
+            for (let key in row) {
+                const label = map[key] || key;
+                el.innerHTML += `<div><b>${label}:</b> ${row[key]}</div>`;
+            }
+            el.innerHTML += "<hr>";
+        });
+    } catch (e) {
+        el.innerHTML = "Data error";
+    }
+}
+
+function setScale(value) {
+    if (!selectedElement) return;
+    selectedElement.dataset.scale = value;
+    selectedElement.style.transform = `scale(${value})`;
+}
+
+
+
+/* ---------------------------
+   Background
+----------------------------*/
+function setBackground() {
+    const url = prompt("Background image path:");
+    if (url) {
+        document.getElementById("canvas").style.backgroundImage = `url('${url}')`;
+    }
+}
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+        const menu = document.getElementById("contextMenu");
+        if (menu.style.display === "block") {
+            menu.style.display = "none";
+            selectedElement = null;
+        }
+    }
+});
+
+</script>
+</body>
+</html>
+

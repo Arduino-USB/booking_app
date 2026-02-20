@@ -1,6 +1,6 @@
 from flask import Blueprint, request, url_for, session, jsonify
 from db_core import sql
-from sql_commands import user_commands
+from sql_commands import user_commands, key_commands
 import psycopg2.errors as sql_errors
 import bcrypt
 
@@ -76,3 +76,40 @@ def log_in():
 	
 	return jsonify({"error" : ["sql error"]})
 
+@user_mgmt.route('/key_login', methods=['POST'])
+def key_login():
+	data = request.get_json()
+	
+	if "key" not in data:
+		return jsonify({"error" : ["You must provide a key to sign in with"]})
+	
+	query = sql(key_commands["CHECK_KEY_EXIST"], args={"key" : data["key"]})
+	
+	if query != True:
+		return jsonify({"error" : ["Given key does not exist"]})
+	
+	return jsonify({"message" : ["Successfully used key sign in"], "redirect" : "REDIRECT_HERE"})
+
+@user_mgmt.route('/logout', methods=['POST'])
+def logout():
+	session.clear()
+	return jsonify({"message": ["Logged out"]})
+
+
+
+@user_mgmt.route('/change_password', methods=['POST'])
+def change_password():
+	data = request.get_json()	
+	
+	if "id" not in session:
+		return jsonify({"error" : ["You must be signed in with an account"]})
+	
+	if "password" not in data:
+		return jsonify({"error" : ["You must provide a password"]})
+ 
+	query = sql(user_commands["CHANGE_PASSWORD"], args={"password" : data["password"]})
+	
+	if isinstance(query, Exception):
+		return jsonify({"error" : str(query.orig.pgerror).split("\n")})
+	
+	return jsonify({"message" : ["Password changed"]})

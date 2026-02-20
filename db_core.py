@@ -1,6 +1,7 @@
 from sqlalchemy import text, create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import psycopg2
+import re
 
 engine = create_engine("postgresql+psycopg2://db_user:lXLUIUFpy4vlAkAPNMYLpUhRr2QIU6m7@localhost:5432/db", future=True)
 
@@ -68,4 +69,33 @@ def sql(cmd, fetch=None, enable_columns=True, args=None, page=None, page_size=No
 		return out_list[0]
 
 	return out_list
+
+
+
+
+
+def check_pgsql_data(value, data_type):
+	"""
+	Returns True if value can be cast to the given PostgreSQL data_type.
+	Otherwise returns False.
+
+	Example:
+		check_pgsql_data("30 minutes", "INTERVAL") -> True
+		check_pgsql_data("30 minutes", "INTEGER")  -> False
+	"""
+
+	# Allow only safe type names (prevents SQL injection via data_type)
+	if not re.fullmatch(r"[A-Za-z0-9_\[\]\s]+", data_type):
+		return False
+
+	try:
+		with engine.begin() as conn:
+			conn.execute(
+				text(f"SELECT CAST(:value AS {data_type})"),
+				{"value": value}
+			)
+		return True
+
+	except SQLAlchemyError:
+		return False
 

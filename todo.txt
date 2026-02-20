@@ -1,0 +1,3 @@
+~Add get req to see all open/ availbe slots
+Add limits to length of resvs
+Add mater keys table to be able to create non "user" users
