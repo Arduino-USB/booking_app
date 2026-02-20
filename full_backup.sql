@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict itJqnH2zIkITN8kTNtrRB9bNGnQlKbeKiRIHrfzRJAEtBiQVbqcOCIuoKYDLUWs
+\restrict M2U7nYGy9GZu0SUai92kVVobBmuMR0XbRhhSu6eRFUqqbs1UQVi3Dk3VeDVgilj
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
@@ -244,7 +244,8 @@ ALTER SEQUENCE public.keys_id_seq OWNED BY public.keys.id;
 CREATE TABLE public.menu (
     id integer NOT NULL,
     name text,
-    length interval
+    length interval,
+    price integer
 );
 
 
@@ -381,7 +382,7 @@ COPY public.keys (id, key) FROM stdin;
 -- Data for Name: menu; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.menu (id, name, length) FROM stdin;
+COPY public.menu (id, name, length, price) FROM stdin;
 \.
 
 
@@ -630,5 +631,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES 
 -- PostgreSQL database dump complete
 --
 
-\unrestrict itJqnH2zIkITN8kTNtrRB9bNGnQlKbeKiRIHrfzRJAEtBiQVbqcOCIuoKYDLUWs
+\unrestrict M2U7nYGy9GZu0SUai92kVVobBmuMR0XbRhhSu6eRFUqqbs1UQVi3Dk3VeDVgilj
 
