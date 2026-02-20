@@ -63,6 +63,10 @@ def create_resv():
 		key_id == None
 	
 	
+	query = sql(menu_commands["CHECK_MENU_LENGTH_BY_ID"], args={"id" : data["menu_id"]})
+
+	if not query:
+		return jsonify({"error" : ["Error looking up menu with provided ID", "If the issue presists please contact developer"]})
 	
 	query = sql(booking_commands["CREATE_RESV"], args={"start" : data["start"], "end" : data["end"], "user_id" : session["id"] if "id" in session else None, "server_id" : data["server_id"], "key" : key_id, "menu_id" : data["menu_id"]})
 	
@@ -272,7 +276,3 @@ def get_all_menu_items():
 	
 	if not query:
 		return jsonify({"error" : ["Error fetching menu items", "If the issue presists please contact developer"]})
-
-
-
-

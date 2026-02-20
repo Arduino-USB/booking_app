@@ -100,6 +100,8 @@ booking_commands = {
 	)
 	
 
+	
+
 }
 
 key_commands = {
@@ -126,8 +128,8 @@ menu_commands = {
 		"FROM menu"	
 	),
 	
-	"CHECK_MENU_LENGTH_BY_ID" : (
-		"SELECT length "
+	"GET_MENU_DATA" : (
+		"SELECT * "
 		"FROM menu "	
 		"WHERE id = : id"
 	),
@@ -135,6 +137,16 @@ menu_commands = {
 	"INSET_MENU_ITEM" : (
 		"INSERT INTO menu (name, length, price) "
 		"VALUES (:name, :length, :price)"	
+	),
+	
+	
+	"CHECK_TIMESTAMP_LENGTH_BY_MENU_ID": (
+		"SELECT EXISTS( "
+			"SELECT 1 "
+			"FROM menu "
+			"WHERE id = :id "
+			"AND NOT (CAST(:t2 AS timestamp) - CAST(:t1 AS timestamp) >= length)"
+		");"
 	)
 }
 

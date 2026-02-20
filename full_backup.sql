@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict M2U7nYGy9GZu0SUai92kVVobBmuMR0XbRhhSu6eRFUqqbs1UQVi3Dk3VeDVgilj
+\restrict qZr8kpQjOdv3FiTbldurtKcYDIbMfRouhfjhqmnwJfSJjMIgkN1wqA1ZBziBDnY
 
--- Dumped from database version 18.1
--- Dumped by pg_dump version 18.1
+-- Dumped from database version 18.2
+-- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -175,6 +175,7 @@ CREATE TABLE public.booking_open (
     user_id integer,
     start_time timestamp without time zone NOT NULL,
     end_time timestamp without time zone NOT NULL,
+    menu_ids integer[],
     CONSTRAINT booking_open_check CHECK ((end_time > start_time))
 );
 
@@ -358,10 +359,10 @@ COPY public.booking (id, date_created, created_by, date_resv_start, date_resv_en
 -- Data for Name: booking_open; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.booking_open (id, user_id, start_time, end_time) FROM stdin;
-3	49	2026-02-05 17:00:00	2026-02-05 18:00:00
-4	49	2026-02-05 17:00:00	2026-02-05 18:00:00
-5	49	2026-02-10 00:00:00	2026-02-28 00:00:00
+COPY public.booking_open (id, user_id, start_time, end_time, menu_ids) FROM stdin;
+3	49	2026-02-05 17:00:00	2026-02-05 18:00:00	\N
+4	49	2026-02-05 17:00:00	2026-02-05 18:00:00	\N
+5	49	2026-02-10 00:00:00	2026-02-28 00:00:00	\N
 \.
 
 
@@ -383,6 +384,7 @@ COPY public.keys (id, key) FROM stdin;
 --
 
 COPY public.menu (id, name, length, price) FROM stdin;
+1	Test Item	01:00:00	300
 \.
 
 
@@ -422,7 +424,7 @@ SELECT pg_catalog.setval('public.keys_id_seq', 5, true);
 -- Name: menu_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.menu_id_seq', 0, false);
+SELECT pg_catalog.setval('public.menu_id_seq', 1, true);
 
 
 --
@@ -558,6 +560,13 @@ ALTER TABLE ONLY public.booking_open
 
 
 --
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
+--
+
+GRANT ALL ON SCHEMA public TO db_user;
+
+
+--
 -- Name: TABLE booking; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -621,6 +630,20 @@ GRANT ALL ON SEQUENCE public.users_id_seq TO db_user;
 
 
 --
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO db_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO db_user;
+
+
+--
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
@@ -631,5 +654,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES 
 -- PostgreSQL database dump complete
 --
 
-\unrestrict M2U7nYGy9GZu0SUai92kVVobBmuMR0XbRhhSu6eRFUqqbs1UQVi3Dk3VeDVgilj
+\unrestrict qZr8kpQjOdv3FiTbldurtKcYDIbMfRouhfjhqmnwJfSJjMIgkN1wqA1ZBziBDnY
 
