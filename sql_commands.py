@@ -145,10 +145,10 @@ menu_commands = {
 			"SELECT 1 "
 			"FROM menu "
 			"WHERE id = :id "
-			"AND NOT (CAST(:t2 AS timestamp) - CAST(:t1 AS timestamp) >= length)"
+			"AND (CAST(:t2 AS timestamp) - CAST(:t1 AS timestamp) <= length)"
 		");"
 	),
-	
+		
 	"CHECK_MENU_ID_USER_ID" : (
 		"SELECT EXISTS ( "
 			"SELECT 1 "

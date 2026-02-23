@@ -62,11 +62,13 @@ def create_resv():
 	else:
 		key_id == None
 	
-	
+	#change this later or something
 	query = sql(menu_commands["CHECK_MENU_LENGTH_BY_ID"], args={"id" : data["menu_id"]})
 
 	if not query:
 		return jsonify({"error" : ["Error looking up menu with provided ID", "If the issue presists please contact developer"]})
+		
+	query = sql(menu_commands["CHECK_TIMESTAMP_LENGTH_BY_MENU_ID"], args={"id" : data["menu_id"], "t1" : data["start"], "t2" : data["end"] })
 	
 	query = sql(booking_commands["CREATE_RESV"], args={"start" : data["start"], "end" : data["end"], "user_id" : session["id"] if "id" in session else None, "server_id" : data["server_id"], "key" : key_id, "menu_id" : data["menu_id"]})
 	

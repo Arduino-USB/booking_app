@@ -1,4 +1,5 @@
 ~Add get req to see all open/ availbe slots
+make sure the server gets to choose what menu items to serve
 Add limits to length of resvs
 Add master keys table to be able to create non "user" users
 Add menu ids to booking_open
