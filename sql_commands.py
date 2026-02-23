@@ -156,6 +156,17 @@ menu_commands = {
     		"WHERE user_id = :user_id "
 			"AND :menu_id = ANY(menu_ids)"
 		");"
+	),
+		
+	"GET_MENU_LENGTH_BY_ID" : (
+		"SELECT length FROM menu "
+		"WHERE id = :id"
+	),
+	
+	"CHECK_SERVER_IN_MENU_ID" : (
+		"SELECT EXISTS("
+			"SELECT 1 "
+			"WHERE "
 	)
 }
 
