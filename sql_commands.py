@@ -51,8 +51,8 @@ user_commands = {
 
 booking_commands = {
 	"CREATE_RESV": (
-		"INSERT INTO booking (date_resv_start, date_resv_end, created_by, server_id, key) "
-		"VALUES (:start, :end, :user_id, :server_id, :key)"
+		"INSERT INTO booking (date_resv_start, date_resv_end, created_by, server_id, key, menu_id) "
+		"VALUES (:start, :end, :user_id, :server_id, :key, :menu_id)"
 	),
 
 	"GET_RESV_PER_MONTH": (
@@ -146,6 +146,15 @@ menu_commands = {
 			"FROM menu "
 			"WHERE id = :id "
 			"AND NOT (CAST(:t2 AS timestamp) - CAST(:t1 AS timestamp) >= length)"
+		");"
+	),
+	
+	"CHECK_MENU_ID_USER_ID" : (
+		"SELECT EXISTS ( "
+			"SELECT 1 "
+    		"FROM booking_open "
+    		"WHERE user_id = :user_id "
+			"AND :menu_id = ANY(menu_ids)"
 		");"
 	)
 }
